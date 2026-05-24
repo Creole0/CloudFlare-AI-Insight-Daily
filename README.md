@@ -14,6 +14,7 @@
 
 *   **☁️ 基于 Cloudflare Workers**：部署在强大的边缘网络，兼具高性能、高可用与零服务器维护成本。
 *   **🧠 集成 Google Gemini**：利用先进的 AI 模型，自动生成高质量、易于理解的内容摘要。
+*   **Workers AI 末级备选**：当 Gemini 或 OpenAI 兼容 API 失败时，可通过 `env.AI` 依次尝试 `@cf/zai-org/glm-4.7-flash` 和 `@cf/moonshotai/kimi-k2.6`。
 *   **🔗 优先支持 Folo 订阅源**：只需简单配置，即可轻松接入 [Folo](https://app.follow.is/) 上的任意信息源，实现个性化内容聚合。
 *   **🔄 每日自动更新**：通过 GitHub Actions 实现全自动化流程，每日准时为您推送最新鲜的 AI 资讯。
 *   **🔧 高度可扩展**：项目架构灵活，不仅限于 AI 领域，您可以轻松定制，将其改造为您专属的任何主题日报。请尽情发挥您的想象力！

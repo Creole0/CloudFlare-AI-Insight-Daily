@@ -8,6 +8,9 @@ kv_namespaces = [
   { binding = "DATA_KV", id = "kv数据库的ID" }
 ]
 
+[ai]
+binding = "AI"
+
 [vars]
 IMG_PROXY = ""  #图片代理链接，用于处理图片不显示
 OPEN_TRANSLATE = "true"
@@ -18,6 +21,7 @@ DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-preview-05-20"
 OPENAI_API_KEY = "sk-xxxxxx" # Replace with your actual OpenAI API Key
 OPENAI_API_URL = "https://api.deepseek.com" # Or your OpenAI compatible API URL
 DEFAULT_OPEN_MODEL = "deepseek-chat"
+CLOUDFLARE_AI_MODELS = "@cf/zai-org/glm-4.7-flash,@cf/moonshotai/kimi-k2.6"
 FOLO_COOKIE_KV_KEY = "folo_auth_cookie" 
 FOLO_DATA_API = "https://api.follow.is/entries"
 FOLO_FILTER_DAYS = 3

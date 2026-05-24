@@ -374,6 +374,52 @@ async function callOpenAIChatAPI(env, promptText, systemPromptText = null) {
     }
 }
 
+function getCloudflareAIModels(env) {
+    const configured = env.CLOUDFLARE_AI_MODELS || "@cf/zai-org/glm-4.7-flash,@cf/moonshotai/kimi-k2.6";
+    return configured
+        .split(",")
+        .map(model => model.trim())
+        .filter(Boolean);
+}
+
+function getCloudflareMessages(promptText, systemPromptText = null) {
+    const messages = [];
+    if (systemPromptText && typeof systemPromptText === 'string' && systemPromptText.trim() !== '') {
+        messages.push({ role: "system", content: systemPromptText });
+    }
+    messages.push({ role: "user", content: promptText });
+    return messages;
+}
+
+async function callCloudflareWorkersAI(env, promptText, systemPromptText = null) {
+    if (!env.AI) {
+        throw new Error("Cloudflare Workers AI binding env.AI is not configured.");
+    }
+
+    const messages = getCloudflareMessages(promptText, systemPromptText);
+    let lastError = null;
+    for (const modelName of getCloudflareAIModels(env)) {
+        try {
+            console.warn(`Trying Cloudflare Workers AI fallback model: ${modelName}`);
+            const result = await env.AI.run(modelName, {
+                messages,
+                temperature: 1,
+                max_tokens: 2048,
+            });
+            const text = result?.response || result?.choices?.[0]?.message?.content;
+            if (text && typeof text === "string") {
+                return text;
+            }
+            throw new Error("Cloudflare Workers AI returned an empty response.");
+        } catch (error) {
+            lastError = error;
+            console.warn(`Cloudflare Workers AI model failed (${modelName}):`, error);
+        }
+    }
+
+    throw lastError || new Error("Cloudflare Workers AI fallback failed.");
+}
+
 /**
  * Calls the OpenAI Chat API with streaming.
  *
@@ -540,10 +586,20 @@ async function* callOpenAIChatAPIStream(env, promptText, systemPromptText = null
  */
 export async function callChatAPI(env, promptText, systemPromptText = null) {
     const platform = env.USE_MODEL_PLATFORM;
-    if (platform.startsWith("OPEN")) {
-        return callOpenAIChatAPI(env, promptText, systemPromptText);
-    } else { // Default to Gemini
-        return callGeminiChatAPI(env, promptText, systemPromptText);
+    try {
+        if (platform.startsWith("CLOUDFLARE") || platform.startsWith("CF")) {
+            return callCloudflareWorkersAI(env, promptText, systemPromptText);
+        } else if (platform.startsWith("OPEN")) {
+            return callOpenAIChatAPI(env, promptText, systemPromptText);
+        } else { // Default to Gemini
+            return callGeminiChatAPI(env, promptText, systemPromptText);
+        }
+    } catch (error) {
+        if (platform.startsWith("CLOUDFLARE") || platform.startsWith("CF")) {
+            throw error;
+        }
+        console.error("Primary chat API failed, trying Cloudflare Workers AI fallback:", error);
+        return callCloudflareWorkersAI(env, promptText, systemPromptText);
     }
 }
 
@@ -559,9 +615,19 @@ export async function callChatAPI(env, promptText, systemPromptText = null) {
  */
 export async function* callChatAPIStream(env, promptText, systemPromptText = null) {
     const platform = env.USE_MODEL_PLATFORM;
-    if (platform.startsWith("OPEN")) {
-        yield* callOpenAIChatAPIStream(env, promptText, systemPromptText);
-    } else { // Default to Gemini
-        yield* callGeminiChatAPIStream(env, promptText, systemPromptText);
+    try {
+        if (platform.startsWith("CLOUDFLARE") || platform.startsWith("CF")) {
+            yield await callCloudflareWorkersAI(env, promptText, systemPromptText);
+        } else if (platform.startsWith("OPEN")) {
+            yield* callOpenAIChatAPIStream(env, promptText, systemPromptText);
+        } else { // Default to Gemini
+            yield* callGeminiChatAPIStream(env, promptText, systemPromptText);
+        }
+    } catch (error) {
+        if (platform.startsWith("CLOUDFLARE") || platform.startsWith("CF")) {
+            throw error;
+        }
+        console.error("Primary streaming chat API failed, trying Cloudflare Workers AI fallback:", error);
+        yield await callCloudflareWorkersAI(env, promptText, systemPromptText);
     }
 }
