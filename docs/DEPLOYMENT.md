@@ -80,7 +80,7 @@ DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-preview-05-20"
 # OpenAI 兼容 API 配置 (如 DeepSeek)
 OPENAI_API_KEY = "your_openai_compatible_key"
 OPENAI_API_URL = "https://api.deepseek.com"
-DEFAULT_OPEN_MODEL = "deepseek-chat"
+DEFAULT_OPEN_MODEL = "deepseek-v4-flash"
 
 # ========================
 # GitHub 发布配置
